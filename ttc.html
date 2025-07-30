@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Tic Tac Toe</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the game */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        @media (max-width: 400px) {
+            .cell {
+                width: 80px;
+                height: 80px;
+                font-size: 2.5rem;
+            }
+        }
+        .cell.x { color: #38bdf8; } /* sky-500 */
+        .cell.o { color: #fb923c; } /* orange-400 */
+        .game-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        /* Hide elements by default */
+        .hidden { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-md mx-auto text-center">
+
+        <!-- Sign-In View -->
+        <div id="signInView">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Multiplayer Tic Tac Toe</h1>
+            <p id="signInStatus" class="text-slate-600 dark:text-slate-400 mb-8">Sign in to play with a friend.</p>
+            <button id="signInButton" class="w-full bg-white text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all duration-300 flex items-center justify-center border border-gray-300 disabled:opacity-75">
+                <svg id="googleIcon" class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.655-3.373-11.303-8H6.306C9.656,39.663,16.318,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C42.018,35.27,44,30.022,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                <svg id="spinnerIcon" class="hidden animate-spin mr-3 h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span id="signInButtonText">Sign in with Google</span>
+            </button>
+        </div>
+
+        <!-- Lobby View -->
+        <div id="lobbyView" class="hidden">
+            <h2 class="text-2xl font-bold mb-2">Welcome!</h2>
+            <p class="text-slate-600 dark:text-slate-400 mb-2">Your User ID: <strong id="userIdDisplay" class="text-slate-700 dark:text-slate-300 break-all"></strong></p>
+            <p class="text-slate-500 dark:text-slate-500 mb-6 text-sm">Share your User ID with a friend, or use theirs to create a unique Game ID.</p>
+            
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-lg game-shadow">
+                <label for="gameIdInput" class="font-semibold block mb-2 text-left">Create or Join a Game</label>
+                <input type="text" id="gameIdInput" placeholder="Enter a custom Game ID" class="w-full p-3 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <button id="joinGameButton" class="w-full mt-4 bg-sky-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 transition-all">
+                    Start Game
+                </button>
+            </div>
+             <button id="signOutButton" class="mt-6 text-sm text-slate-500 hover:text-sky-500">Sign Out</button>
+        </div>
+
+        <!-- Game View -->
+        <div id="gameView" class="hidden">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">Game ID: <span id="gameIdDisplay" class="text-sky-500"></span></h1>
+            <p id="status" class="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 h-8 transition-all"></p>
+            <p id="playerInfo" class="text-md text-slate-500 dark:text-slate-400 mb-4 h-6"></p>
+
+            <div id="board" class="grid grid-cols-3 gap-2 bg-slate-300 dark:bg-slate-700 p-2 rounded-lg game-shadow mx-auto" style="width: 308px;">
+                <!-- 3x3 grid -->
+                <div data-cell-index="0" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="1" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="2" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="3" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="4" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="5" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="6" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="7" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                <div data-cell-index="8" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+            </div>
+
+            <button id="leaveGameButton" class="mt-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all">
+                Leave Game
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tictactoe-default';
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGwdUwsNlKYxkL3D95YEfdybg3Ls_nN4M",
+            authDomain: "tic-tac-toe-4410e.firebaseapp.com",
+            projectId: "tic-tac-toe-4410e",
+            storageBucket: "tic-tac-toe-4410e.appspot.com",
+            messagingSenderId: "29627705587",
+            appId: "1:29627705587:web:fb1e8d647c08494b0c6f86",
+            measurementId: "G-BQFZL8H7DZ"
+       };
+
+        // Initialize Firebase
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            document.body.innerHTML = '<p class="text-red-500 text-center">Error: Could not connect to Firebase. Please check the console.</p>';
+        }
+
+        // --- DOM Element References ---
+        const signInView = document.getElementById('signInView');
+        const lobbyView = document.getElementById('lobbyView');
+        const gameView = document.getElementById('gameView');
+
+        const signInButton = document.getElementById('signInButton');
+        const signInStatus = document.getElementById('signInStatus');
+        const googleIcon = document.getElementById('googleIcon');
+        const spinnerIcon = document.getElementById('spinnerIcon');
+        const signInButtonText = document.getElementById('signInButtonText');
+        const signOutButton = document.getElementById('signOutButton');
+        const joinGameButton = document.getElementById('joinGameButton');
+        const leaveGameButton = document.getElementById('leaveGameButton');
+
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const gameIdInput = document.getElementById('gameIdInput');
+        const gameIdDisplay = document.getElementById('gameIdDisplay');
+        
+        const statusDisplay = document.getElementById('status');
+        const playerInfo = document.getElementById('playerInfo');
+        const cells = document.querySelectorAll('.cell');
+
+        // --- Game State Variables ---
+        let currentUser = null;
+        let currentGameId = null;
+        let unsubscribeGameListener = null; // To stop listening to game updates
+
+        // --- Authentication ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                signInView.classList.add('hidden');
+                lobbyView.classList.remove('hidden');
+                gameView.classList.add('hidden');
+                userIdDisplay.textContent = user.uid;
+            } else {
+                // User is signed out
+                currentUser = null;
+                signInView.classList.remove('hidden');
+                lobbyView.classList.add('hidden');
+                gameView.classList.add('hidden');
+                if (unsubscribeGameListener) unsubscribeGameListener();
+                 // Re-enable button and reset text if sign-out happens
+                signInButton.disabled = false;
+                signInStatus.textContent = 'Sign in to play with a friend.';
+                googleIcon.classList.remove('hidden');
+                spinnerIcon.classList.add('hidden');
+                signInButtonText.textContent = 'Sign in with Google';
+            }
+        });
+
+        signInButton.addEventListener('click', async () => {
+            // Provide feedback to the user that something is happening
+            signInButton.disabled = true;
+            signInStatus.textContent = 'Opening Google Sign-in...';
+            googleIcon.classList.add('hidden');
+            spinnerIcon.classList.remove('hidden');
+            signInButtonText.textContent = 'Waiting for Google...';
+            
+            // Clear previous errors
+            const oldError = document.getElementById('signInError');
+            if(oldError) oldError.remove();
+
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                // The onAuthStateChanged listener will handle the successful sign-in
+            } catch (error) {
+                // Log the full error object for better debugging
+                console.error("Full sign-in error object:", error);
+                
+                const signInErrorDisplay = document.createElement('div');
+                signInErrorDisplay.id = 'signInError';
+                signInErrorDisplay.classList.add('mt-4', 'p-4', 'bg-red-100', 'dark:bg-red-900', 'border', 'border-red-400', 'text-red-700', 'dark:text-red-300', 'rounded-lg', 'text-left', 'text-sm');
+
+                if (error.code === 'auth/unauthorized-domain') {
+                    signInErrorDisplay.innerHTML = `
+                        <p class="font-bold mb-2">Sign-in failed: Domain not authorized.</p>
+                        <p class="mb-2">This is a required security step. Please double-check that the domain was added correctly.</p>
+                        <b>To fix this:</b>
+                        <ol class="list-decimal list-inside mt-2">
+                            <li>Go to your Firebase Console → Authentication → Settings → Authorized domains.</li>
+                            <li>Click "Add domain" and enter this exact value:</li>
+                        </ol>
+                        <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded mt-2 text-slate-800 dark:text-slate-200 w-full text-center">scf.usercontent.goog</code>
+                        <p class="mt-2">Also, add <code class="bg-slate-200 dark:bg-slate-700 p-1 rounded">localhost</code> and <code class="bg-slate-200 dark:bg-slate-700 p-1 rounded">127.0.0.1</code> if they are not there.</p>
+                    `;
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    signInErrorDisplay.innerHTML = `<p class="font-bold">Sign-in cancelled.</p><p>The sign-in window was closed before completing.</p>`;
+                } else {
+                    signInErrorDisplay.innerHTML = `<p class="font-bold">An unknown sign-in error occurred.</p><p>Error code: ${error.code}. Check the console for more details.</p>`;
+                }
+                
+                // Append the error message below the button
+                if (signInButton) signInButton.after(signInErrorDisplay);
+                
+                // Re-enable the button and reset status on error
+                signInButton.disabled = false;
+                signInStatus.textContent = 'Sign in to play with a friend.';
+                googleIcon.classList.remove('hidden');
+                spinnerIcon.classList.add('hidden');
+                signInButtonText.textContent = 'Sign in with Google';
+            }
+        });
+
+        signOutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Sign out failed", error);
+            }
+        });
+
+        // --- Game Lobby Logic ---
+        joinGameButton.addEventListener('click', async () => {
+            const gameId = gameIdInput.value.trim();
+            if (!gameId) {
+                alert("Please enter a Game ID.");
+                return;
+            }
+            if (!currentUser) {
+                alert("You must be signed in to play.");
+                return;
+            }
+            
+            currentGameId = gameId;
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+
+            try {
+                const gameSnap = await getDoc(gameRef);
+
+                if (gameSnap.exists()) {
+                    // Game exists, try to join as player 'O'
+                    const gameData = gameSnap.data();
+                    if (gameData.players.O) {
+                        // If player O is already taken, check if current user is one of the players
+                         if(gameData.players.X !== currentUser.uid && gameData.players.O !== currentUser.uid) {
+                            alert("This game is full.");
+                            return;
+                         }
+                    } else if (gameData.players.X !== currentUser.uid) {
+                        // Join as player 'O'
+                        await updateDoc(gameRef, {
+                            'players.O': currentUser.uid,
+                            status: 'active'
+                        });
+                    }
+                } else {
+                    // Game does not exist, create it
+                    await setDoc(gameRef, {
+                        board: Array(9).fill(''),
+                        players: { X: currentUser.uid, O: null },
+                        currentPlayer: 'X',
+                        status: 'waiting', // waiting for player O
+                        gameId: gameId
+                    });
+                }
+
+                // Switch to game view and start listening for updates
+                lobbyView.classList.add('hidden');
+                gameView.classList.remove('hidden');
+                gameIdDisplay.textContent = gameId;
+                listenToGameUpdates(gameId);
+
+            } catch (error) {
+                console.error("Error creating/joining game:", error);
+                alert("Could not create or join the game. See console for details.");
+            }
+        });
+
+        leaveGameButton.addEventListener('click', () => {
+            if (unsubscribeGameListener) {
+                unsubscribeGameListener(); // Stop listening
+                unsubscribeGameListener = null;
+            }
+            currentGameId = null;
+            gameView.classList.add('hidden');
+            lobbyView.classList.remove('hidden');
+        });
+
+        // --- Real-time Game Logic ---
+        function listenToGameUpdates(gameId) {
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+            unsubscribeGameListener = onSnapshot(gameRef, (doc) => {
+                if (doc.exists()) {
+                    const gameData = doc.data();
+                    updateUI(gameData);
+                } else {
+                    // Game was deleted or does not exist
+                    alert("The game session has ended.");
+                    leaveGameButton.click();
+                }
+            });
+        }
+
+        function updateUI(gameData) {
+            // Update board
+            gameData.board.forEach((value, index) => {
+                const cell = cells[index];
+                cell.textContent = value;
+                cell.classList.remove('x', 'o');
+                if (value) {
+                    cell.classList.add(value.toLowerCase());
+                }
+            });
+
+            // Update status and player info
+            const amIPlayerX = gameData.players.X === currentUser.uid;
+            const amIPlayerO = gameData.players.O === currentUser.uid;
+            let mySymbol = null;
+            if(amIPlayerX) mySymbol = 'X';
+            if(amIPlayerO) mySymbol = 'O';
+
+            playerInfo.textContent = `You are Player ${mySymbol || 'Spectator'}`;
+            
+            const winner = checkWinner(gameData.board);
+            if (winner) {
+                gameData.status = 'win';
+            } else if (!gameData.board.includes('')) {
+                gameData.status = 'draw';
+            }
+
+            switch (gameData.status) {
+                case 'waiting':
+                    statusDisplay.textContent = 'Waiting for Player O to join...';
+                    break;
+                case 'active':
+                    if (gameData.currentPlayer === mySymbol) {
+                        statusDisplay.textContent = 'Your turn!';
+                        statusDisplay.classList.add('text-green-500', 'font-bold');
+                    } else {
+                        statusDisplay.textContent = `Opponent's turn (${gameData.currentPlayer})`;
+                        statusDisplay.classList.remove('text-green-500', 'font-bold');
+                    }
+                    break;
+                case 'win':
+                    const winnerSymbol = checkWinner(gameData.board);
+                    if (winnerSymbol === mySymbol) {
+                        statusDisplay.textContent = 'You won!';
+                    } else {
+                        statusDisplay.textContent = 'You lost!';
+                    }
+                    break;
+                case 'draw':
+                    statusDisplay.textContent = "It's a draw!";
+                    break;
+            }
+        }
+
+        // --- Player Actions ---
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+
+        async function handleCellClick(event) {
+            if (!currentGameId) return;
+
+            const cellIndex = parseInt(event.target.getAttribute('data-cell-index'));
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+
+            try {
+                const gameSnap = await getDoc(gameRef);
+                if (!gameSnap.exists()) return;
+
+                const gameData = gameSnap.data();
+                const amIPlayerX = gameData.players.X === currentUser.uid;
+                const amIPlayerO = gameData.players.O === currentUser.uid;
+                const mySymbol = amIPlayerX ? 'X' : (amIPlayerO ? 'O' : null);
+
+                // Check if it's the player's turn, the game is active, and the cell is empty
+                if (gameData.status === 'active' && gameData.currentPlayer === mySymbol && gameData.board[cellIndex] === '') {
+                    const newBoard = [...gameData.board];
+                    newBoard[cellIndex] = mySymbol;
+
+                    const newCurrentPlayer = mySymbol === 'X' ? 'O' : 'X';
+                    
+                    let newStatus = 'active';
+                    const winner = checkWinner(newBoard);
+                    if (winner) {
+                        newStatus = 'win';
+                    } else if (!newBoard.includes('')) {
+                        newStatus = 'draw';
+                    }
+
+                    await updateDoc(gameRef, {
+                        board: newBoard,
+                        currentPlayer: newCurrentPlayer,
+                        status: newStatus
+                    });
+                }
+            } catch (error) {
+                console.error("Error making a move:", error);
+            }
+        }
+
+        function checkWinner(board) {
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6]             // Diagonals
+            ];
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a]; // Returns 'X' or 'O'
+                }
+            }
+            return null; // No winner
+        }
+
+    </script>
+</body>
+</html>
