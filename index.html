@@ -130,7 +130,7 @@
             
             <div class="bg-white dark:bg-slate-800 p-6 rounded-lg game-shadow">
                 <label for="gameIdInput" class="font-semibold block mb-2 text-left">Create or Join a Game</label>
-                <input type="text" id="gameIdInput" placeholder="Enter a custom Game ID" class="w-full p-3 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <input type="text" id="gameIdInput" placeholder="Enter a custom Game ID" autocomplete="off" class="w-full p-3 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
                 <button id="joinGameButton" class="w-full mt-4 bg-sky-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 transition-all">
                     Start Game
                 </button>
@@ -140,9 +140,28 @@
 
         <!-- Game View -->
         <div id="gameView" class="hidden">
-            <div class="flex flex-col md:flex-row gap-8 justify-center items-start">
+            <div class="flex flex-col-reverse md:flex-row gap-8 justify-center items-center md:items-start">
+                 <!-- Chat Section (First in HTML for mobile layout) -->
+                <div id="chatContainer" class="hidden w-full md:w-80">
+                     <div class="bg-white dark:bg-slate-800 p-4 rounded-lg game-shadow h-80 md:h-[450px] flex flex-col">
+                        <h2 class="text-xl font-bold mb-2 border-b border-slate-200 dark:border-slate-700 pb-2 text-slate-800 dark:text-slate-200">Chat</h2>
+                        <div id="chatMessages" class="flex-grow overflow-y-auto mb-2 text-sm space-y-2 pr-2 flex flex-col">
+                            <!-- Messages will be injected here -->
+                        </div>
+                        <div class="relative">
+                            <div id="quickChatOptions" class="hidden absolute bottom-full mb-2 w-full bg-slate-100 dark:bg-slate-700 rounded-lg shadow-lg p-2 space-y-1">
+                                <!-- Quick chat options here -->
+                            </div>
+                            <button id="quickChatButton" class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-sky-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </button>
+                            <input type="text" id="chatInput" placeholder="Type a message..." class="w-full p-2 pl-10 pr-16 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800 dark:text-slate-200">
+                            <button id="sendChatButton" class="absolute right-2 top-1/2 -translate-y-1/2 bg-sky-500 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-sky-600">Send</button>
+                        </div>
+                    </div>
+                </div>
                 <!-- Game Board Section -->
-                <div class="w-full flex-grow">
+                <div class="w-full md:w-auto">
                     <h1 id="gameTitle" class="text-3xl md:text-4xl font-bold mb-2"></h1>
                     <p id="status" class="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 h-8 transition-all"></p>
                     <p id="playerInfo" class="text-md text-slate-500 dark:text-slate-400 mb-4 h-6"></p>
@@ -174,26 +193,6 @@
                         Leave Game
                     </button>
                 </div>
-
-                <!-- Chat Section -->
-                <div id="chatContainer" class="hidden w-full md:w-96">
-                     <div class="bg-white dark:bg-slate-800 p-4 rounded-lg game-shadow h-[450px] flex flex-col">
-                        <h2 class="text-xl font-bold mb-2 border-b border-slate-200 dark:border-slate-700 pb-2 text-slate-800 dark:text-slate-200">Chat</h2>
-                        <div id="chatMessages" class="flex-grow overflow-y-auto mb-2 text-sm space-y-2 pr-2 flex flex-col">
-                            <!-- Messages will be injected here -->
-                        </div>
-                        <div class="relative">
-                            <div id="quickChatOptions" class="hidden absolute bottom-full mb-2 w-full bg-slate-100 dark:bg-slate-700 rounded-lg shadow-lg p-2 space-y-1">
-                                <!-- Quick chat options here -->
-                            </div>
-                            <button id="quickChatButton" class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-sky-500">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            </button>
-                            <input type="text" id="chatInput" placeholder="Type a message..." class="w-full p-2 pl-10 pr-16 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-800 dark:text-slate-200">
-                            <button id="sendChatButton" class="absolute right-2 top-1/2 -translate-y-1/2 bg-sky-500 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-sky-600">Send</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -202,7 +201,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField, collection, addDoc, query, orderBy, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField, collection, addDoc, query, orderBy, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tictactoe-default';
@@ -370,7 +369,7 @@
                             <li>Click "Add domain" and add the following domains if they are not already on the list:</li>
                         </ol>
                         <div class="mt-2 space-y-2">
-                            <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded text-slate-800 dark:text-slate-200 w-full text-center font-mono">${currentHostname}</code>
+                            <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded text-slate-800 dark:text-slate-200 w-full text-center font-mono">${currentHostname || 'Your-Website-Domain.com'}</code>
                             <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded text-slate-800 dark:text-slate-200 w-full text-center font-mono">scf.usercontent.goog</code>
                         </div>
                         <p class="mt-3 text-xs">After adding the domain(s), please do a hard refresh (Ctrl+Shift+R) of this page.</p>
@@ -604,13 +603,22 @@
                 const lastUpdated = gameData.lastUpdated?.toDate();
                 const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                 if (lastUpdated && lastUpdated < fiveMinutesAgo) {
-                    await deleteDoc(gameRef); // Delete stale room
-                    createNewGame(gameRef, gameId); // Create a new one
+                    // Stale room found. Delete its chat subcollection first.
+                    const chatRef = collection(db, `artifacts/${appId}/public/data/games`, gameId, 'chat');
+                    const chatSnapshot = await getDocs(chatRef);
+                    const deletePromises = [];
+                    chatSnapshot.forEach(doc => {
+                        deletePromises.push(deleteDoc(doc.ref));
+                    });
+                    await Promise.all(deletePromises);
+                    
+                    // Now create a fresh game, overwriting the old one.
+                    await createNewGame(gameRef, gameId); 
                 } else {
-                    joinExistingGame(gameRef, gameData);
+                    await joinExistingGame(gameRef, gameData);
                 }
             } else {
-                createNewGame(gameRef, gameId);
+                await createNewGame(gameRef, gameId);
             }
             
             lobbyView.classList.add('hidden');
@@ -773,6 +781,7 @@
             
             unsubscribeChatListener = onSnapshot(q, async (snapshot) => {
                 const gameSnap = await getDoc(gameRef);
+                if (!gameSnap.exists()) return;
                 const gameData = gameSnap.data();
                 const playerX_UID = gameData.players.X;
 
@@ -995,4 +1004,4 @@
 
     </script>
 </body>
-</ht
+</html>
