@@ -64,6 +64,23 @@
             stroke-dashoffset: 1000;
             transition: stroke-dashoffset 0.5s ease-in-out;
         }
+        /* Chat box scrollbar */
+        #chatMessages::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chatMessages::-webkit-scrollbar-track {
+            background: #f1f5f9; /* slate-100 */
+        }
+        #chatMessages::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* slate-400 */
+            border-radius: 3px;
+        }
+        .dark #chatMessages::-webkit-scrollbar-track {
+            background: #1e293b; /* slate-800 */
+        }
+        .dark #chatMessages::-webkit-scrollbar-thumb {
+            background: #475569; /* slate-600 */
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center min-h-screen p-4">
@@ -71,10 +88,10 @@
     <canvas id="fireworksCanvas"></canvas>
 
     <!-- Main Container -->
-    <div class="w-full max-w-md mx-auto text-center">
+    <div class="w-full max-w-4xl mx-auto text-center">
 
         <!-- Mode Selection View -->
-        <div id="modeSelectionView">
+        <div id="modeSelectionView" class="max-w-md mx-auto">
             <h1 class="text-4xl md:text-5xl font-bold mb-8 uppercase">TIC TAC TOE</h1>
             <div class="space-y-4">
                 <div class="relative inline-block w-full">
@@ -92,7 +109,7 @@
         </div>
 
         <!-- Sign-In View -->
-        <div id="signInView" class="hidden">
+        <div id="signInView" class="hidden max-w-md mx-auto">
             <h1 class="text-4xl md:text-5xl font-bold mb-4 uppercase">TIC TAC TOE</h1>
             <p id="signInStatus" class="text-slate-600 dark:text-slate-400 mb-8">Sign in to play with a friend.</p>
             <button id="signInButton" class="w-full bg-white text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all duration-300 flex items-center justify-center border border-gray-300 disabled:opacity-75">
@@ -106,7 +123,7 @@
         </div>
 
         <!-- Lobby View -->
-        <div id="lobbyView" class="hidden">
+        <div id="lobbyView" class="hidden max-w-md mx-auto">
             <h2 class="text-2xl font-bold mb-2">Welcome!</h2>
             <p class="text-slate-600 dark:text-slate-400 mb-2">Your User ID: <strong id="userIdDisplay" class="text-slate-700 dark:text-slate-300 break-all"></strong></p>
             <p class="text-slate-500 dark:text-slate-500 mb-6 text-sm">Share your User ID with a friend, or use theirs to create a unique Game ID.</p>
@@ -123,36 +140,61 @@
 
         <!-- Game View -->
         <div id="gameView" class="hidden">
-            <h1 id="gameTitle" class="text-3xl md:text-4xl font-bold mb-2"></h1>
-            <p id="status" class="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 h-8 transition-all"></p>
-            <p id="playerInfo" class="text-md text-slate-500 dark:text-slate-400 mb-4 h-6"></p>
+            <div class="flex flex-col md:flex-row gap-8 justify-center items-start">
+                <!-- Game Board Section -->
+                <div class="w-full md:w-2/3">
+                    <h1 id="gameTitle" class="text-3xl md:text-4xl font-bold mb-2"></h1>
+                    <p id="status" class="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 h-8 transition-all"></p>
+                    <p id="playerInfo" class="text-md text-slate-500 dark:text-slate-400 mb-4 h-6"></p>
 
-            <div class="relative mx-auto" style="width: 308px; height: 308px;">
-                <div id="board" class="grid grid-cols-3 gap-2 bg-slate-300 dark:bg-slate-700 p-2 rounded-lg game-shadow absolute inset-0">
-                    <!-- 3x3 grid -->
-                    <div data-cell-index="0" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="1" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="2" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="3" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="4" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="5" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="6" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="7" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                    <div data-cell-index="8" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div class="relative mx-auto" style="width: 308px; height: 308px;">
+                        <div id="board" class="grid grid-cols-3 gap-2 bg-slate-300 dark:bg-slate-700 p-2 rounded-lg game-shadow absolute inset-0">
+                            <!-- 3x3 grid -->
+                            <div data-cell-index="0" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="1" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="2" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="3" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="4" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="5" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="6" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="7" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                            <div data-cell-index="8" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                        </div>
+                         <svg id="board-overlay" class="absolute inset-0 w-full h-full" style="pointer-events: none;">
+                            <line id="winning-line" x1="0" y1="0" x2="0" y2="0" />
+                        </svg>
+                    </div>
+                    
+                    <div id="replayView" class="hidden mt-8 text-center">
+                        <p id="replayStatus" class="mb-4 text-lg"></p>
+                        <button id="replayButton" class="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 disabled:opacity-50">Request Replay</button>
+                    </div>
+
+                    <button id="leaveGameButton" class="mt-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600">
+                        Leave Game
+                    </button>
                 </div>
-                 <svg id="board-overlay" class="absolute inset-0 w-full h-full" style="pointer-events: none;">
-                    <line id="winning-line" x1="0" y1="0" x2="0" y2="0" />
-                </svg>
-            </div>
-            
-            <div id="replayView" class="hidden mt-8 text-center">
-                <p id="replayStatus" class="mb-4 text-lg"></p>
-                <button id="replayButton" class="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 disabled:opacity-50">Request Replay</button>
-            </div>
 
-            <button id="leaveGameButton" class="mt-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600">
-                Leave Game
-            </button>
+                <!-- Chat Section -->
+                <div id="chatContainer" class="hidden w-full md:w-1/3">
+                     <div class="bg-white dark:bg-slate-800 p-4 rounded-lg game-shadow h-[450px] flex flex-col">
+                        <h2 class="text-xl font-bold mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">Chat</h2>
+                        <div id="chatMessages" class="flex-grow overflow-y-auto mb-2 text-left text-sm space-y-2 pr-2">
+                            <!-- Messages will be injected here -->
+                        </div>
+                        <div class="relative">
+                            <div id="quickChatOptions" class="hidden absolute bottom-full mb-2 w-full bg-slate-100 dark:bg-slate-700 rounded-lg shadow-lg p-2 space-y-1">
+                                <!-- Quick chat options here -->
+                            </div>
+                            <button id="quickChatButton" class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-sky-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </button>
+                            <input type="text" id="chatInput" placeholder="Type a message..." class="w-full p-2 pl-10 pr-16 bg-slate-200 dark:bg-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <button id="sendChatButton" class="absolute right-2 top-1/2 -translate-y-1/2 bg-sky-500 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-sky-600">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -160,7 +202,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField, collection, addDoc, query, orderBy, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tictactoe-default';
@@ -233,6 +275,12 @@
         const replayView = document.getElementById('replayView');
         const replayButton = document.getElementById('replayButton');
         const replayStatus = document.getElementById('replayStatus');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendChatButton = document.getElementById('sendChatButton');
+        const quickChatButton = document.getElementById('quickChatButton');
+        const quickChatOptions = document.getElementById('quickChatOptions');
 
         // --- Game State Variables ---
         let gameMode = null; // 'single' or 'multi'
@@ -240,6 +288,7 @@
         let currentUser = null;
         let currentGameId = null;
         let unsubscribeGameListener = null; 
+        let unsubscribeChatListener = null;
         
         // Single Player State
         let singlePlayerState = {
@@ -253,6 +302,8 @@
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
             [0, 4, 8], [2, 4, 6]
         ];
+        
+        const quickChatMessages = ["Good luck!", "Nice move!", "You're good at this!", "Well played.", "GG"];
 
         // --- Mode Selection ---
         singlePlayerDropdownButton.addEventListener('click', () => {
@@ -267,6 +318,7 @@
                 modeSelectionView.classList.add('hidden');
                 difficultyDropdown.classList.add('hidden');
                 gameView.classList.remove('hidden');
+                chatContainer.classList.add('hidden');
                 startSinglePlayerGame();
             });
         });
@@ -293,6 +345,7 @@
                     signInView.classList.remove('hidden');
                     lobbyView.classList.add('hidden');
                     if (unsubscribeGameListener) unsubscribeGameListener();
+                    if (unsubscribeChatListener) unsubscribeChatListener();
                 }
             }
         });
@@ -330,10 +383,8 @@
         leaveGameButton.addEventListener('click', () => {
             gameView.classList.add('hidden');
             modeSelectionView.classList.remove('hidden');
-            if (unsubscribeGameListener) {
-                unsubscribeGameListener();
-                unsubscribeGameListener = null;
-            }
+            if (unsubscribeGameListener) unsubscribeGameListener();
+            if (unsubscribeChatListener) unsubscribeChatListener();
             resetBoardUI();
         });
         
@@ -502,26 +553,49 @@
             const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
             const gameSnap = await getDoc(gameRef);
 
+            // Room cleanup logic
             if (gameSnap.exists()) {
                 const gameData = gameSnap.data();
-                if (!gameData.players.O && gameData.players.X !== currentUser.uid) {
-                    await updateDoc(gameRef, { 'players.O': currentUser.uid, status: 'active' });
+                const lastUpdated = gameData.lastUpdated?.toDate();
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                if (lastUpdated && lastUpdated < fiveMinutesAgo) {
+                    await deleteDoc(gameRef); // Delete stale room
+                    createNewGame(gameRef, gameId); // Create a new one
+                } else {
+                    joinExistingGame(gameRef, gameData);
                 }
             } else {
-                await setDoc(gameRef, {
-                    board: Array(9).fill(''),
-                    players: { X: currentUser.uid, O: null },
-                    currentPlayer: 'X',
-                    status: 'waiting',
-                    gameId: gameId,
-                });
+                createNewGame(gameRef, gameId);
             }
             
             lobbyView.classList.add('hidden');
             gameView.classList.remove('hidden');
+            chatContainer.classList.remove('hidden');
             gameTitle.innerHTML = `Game ID: <span class="text-sky-500">${gameId}</span>`;
             listenToGameUpdates(gameId);
+            listenToChatUpdates(gameId);
         });
+        
+        async function createNewGame(gameRef, gameId) {
+             await setDoc(gameRef, {
+                board: Array(9).fill(''),
+                players: { X: currentUser.uid, O: null },
+                currentPlayer: 'X',
+                status: 'waiting',
+                gameId: gameId,
+                lastUpdated: serverTimestamp()
+            });
+        }
+        
+        async function joinExistingGame(gameRef, gameData) {
+            if (!gameData.players.O && gameData.players.X !== currentUser.uid) {
+                await updateDoc(gameRef, { 
+                    'players.O': currentUser.uid, 
+                    status: 'active',
+                    lastUpdated: serverTimestamp()
+                });
+            }
+        }
 
         async function handleMultiplayerMove(cellIndex) {
             if (!currentGameId) return;
@@ -543,7 +617,8 @@
                 await updateDoc(gameRef, {
                     board: newBoard,
                     currentPlayer: mySymbol === 'X' ? 'O' : 'X',
-                    status: newStatus
+                    status: newStatus,
+                    lastUpdated: serverTimestamp()
                 });
             }
         }
@@ -622,17 +697,13 @@
 
         async function handleReplayRequest() {
             const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
-            const gameSnap = await getDoc(gameRef);
-            if (!gameSnap.exists()) return;
-
-            const gameData = gameSnap.data();
             
-            // Using dot notation for atomic update
+            // Using dot notation for atomic update is crucial here
             const updatePayload = {};
             updatePayload[`replayRequest.${currentUser.uid}`] = true;
             await updateDoc(gameRef, updatePayload);
             
-            // Check if opponent has also requested
+            // Refetch the document to check the latest state
             const updatedGameSnap = await getDoc(gameRef);
             const updatedGameData = updatedGameSnap.data();
             const replayRequests = updatedGameData.replayRequest || {};
@@ -643,10 +714,71 @@
                     board: Array(9).fill(''),
                     currentPlayer: 'X',
                     status: 'active',
-                    replayRequest: deleteField()
+                    replayRequest: deleteField(),
+                    lastUpdated: serverTimestamp()
                 });
             }
         }
+        
+        // --- Chat Logic ---
+        function listenToChatUpdates(gameId) {
+            const chatRef = collection(db, `artifacts/${appId}/public/data/games`, gameId, 'chat');
+            const q = query(chatRef, orderBy('timestamp'));
+            
+            unsubscribeChatListener = onSnapshot(q, (snapshot) => {
+                chatMessages.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const messageElement = document.createElement('div');
+                    const isMe = msg.senderId === currentUser.uid;
+                    messageElement.classList.add('p-2', 'rounded-lg', 'max-w-[80%]', 'w-fit', isMe ? 'bg-sky-100 dark:bg-sky-900 self-end' : 'bg-slate-200 dark:bg-slate-700 self-start');
+                    messageElement.textContent = msg.text;
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+        
+        async function sendChatMessage(text) {
+            if (!text.trim() || !currentGameId) return;
+            const chatRef = collection(db, `artifacts/${appId}/public/data/games`, currentGameId, 'chat');
+            await addDoc(chatRef, {
+                text: text.trim(),
+                senderId: currentUser.uid,
+                timestamp: serverTimestamp()
+            });
+        }
+        
+        sendChatButton.addEventListener('click', () => {
+            sendChatMessage(chatInput.value);
+            chatInput.value = '';
+        });
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendChatMessage(chatInput.value);
+                chatInput.value = '';
+            }
+        });
+        
+        quickChatButton.addEventListener('click', () => {
+            quickChatOptions.classList.toggle('hidden');
+        });
+        
+        // Populate quick chat options
+        quickChatOptions.innerHTML = ''; // Clear old options before repopulating
+        quickChatMessages.forEach(msg => {
+            const option = document.createElement('a');
+            option.href = '#';
+            option.textContent = msg;
+            option.classList.add('block', 'p-2', 'hover:bg-slate-200', 'dark:hover:bg-slate-600', 'rounded');
+            option.onclick = (e) => {
+                e.preventDefault();
+                sendChatMessage(msg);
+                quickChatOptions.classList.add('hidden');
+            };
+            quickChatOptions.appendChild(option);
+        });
 
 
         // --- UI & Helper Functions ---
@@ -804,4 +936,4 @@
 
     </script>
 </body>
-</html>
+</ht
