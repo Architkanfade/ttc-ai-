@@ -356,6 +356,29 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 console.error("Sign in failed", error);
+                if (error.code === 'auth/unauthorized-domain') {
+                    const currentHostname = window.location.hostname;
+                    const signInErrorDisplay = document.createElement('div');
+                    signInErrorDisplay.id = 'signInError';
+                    signInErrorDisplay.classList.add('mt-4', 'p-4', 'bg-red-100', 'dark:bg-red-900', 'border', 'border-red-400', 'text-red-700', 'dark:text-red-300', 'rounded-lg', 'text-left', 'text-sm');
+                    signInErrorDisplay.innerHTML = `
+                        <p class="font-bold text-lg mb-2">ACTION REQUIRED: Domain Not Authorized</p>
+                        <p class="mb-2">Your Firebase project is blocking sign-in from this website. This is a security setting you must change.</p>
+                        <b>To fix this:</b>
+                        <ol class="list-decimal list-inside mt-2 space-y-1">
+                            <li>Go to your Firebase Console → Authentication → Settings → Authorized domains.</li>
+                            <li>Click "Add domain" and add the following domains if they are not already on the list:</li>
+                        </ol>
+                        <div class="mt-2 space-y-2">
+                            <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded text-slate-800 dark:text-slate-200 w-full text-center font-mono">${currentHostname}</code>
+                            <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded text-slate-800 dark:text-slate-200 w-full text-center font-mono">scf.usercontent.goog</code>
+                        </div>
+                        <p class="mt-3 text-xs">After adding the domain(s), please do a hard refresh (Ctrl+Shift+R) of this page.</p>
+                    `;
+                    const oldError = document.getElementById('signInError');
+                    if(oldError) oldError.remove();
+                    signInButton.after(signInErrorDisplay);
+                }
             }
         });
 
@@ -380,12 +403,34 @@
 
         cells.forEach(cell => cell.addEventListener('click', handleCellClick));
 
-        leaveGameButton.addEventListener('click', () => {
+        leaveGameButton.addEventListener('click', async () => {
+            if (gameMode === 'multi' && currentGameId && currentUser) {
+                const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+                const gameSnap = await getDoc(gameRef);
+                if (gameSnap.exists()) {
+                    const gameData = gameSnap.data();
+                    if (gameData.players.X === currentUser.uid) {
+                        // Player X is leaving, delete the game
+                        await deleteDoc(gameRef);
+                    } else if (gameData.players.O === currentUser.uid) {
+                        // Player O is leaving
+                        await updateDoc(gameRef, {
+                            'players.O': null,
+                            status: 'waiting',
+                            lastUpdated: serverTimestamp(),
+                            replayRequest: deleteField()
+                        });
+                    }
+                }
+            }
+            
+            // Client-side cleanup
             gameView.classList.add('hidden');
             modeSelectionView.classList.remove('hidden');
             if (unsubscribeGameListener) unsubscribeGameListener();
             if (unsubscribeChatListener) unsubscribeChatListener();
             resetBoardUI();
+            currentGameId = null;
         });
         
         // --- Single Player Mode ---
@@ -587,4 +632,367 @@
             });
         }
         
-        async function joinExistingGame(g
+        async function joinExistingGame(gameRef, gameData) {
+            if (!gameData.players.O && gameData.players.X !== currentUser.uid) {
+                await updateDoc(gameRef, { 
+                    'players.O': currentUser.uid, 
+                    status: 'active',
+                    lastUpdated: serverTimestamp()
+                });
+            }
+        }
+
+        async function handleMultiplayerMove(cellIndex) {
+            if (!currentGameId) return;
+
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+            const gameSnap = await getDoc(gameRef);
+            if (!gameSnap.exists()) return;
+
+            const gameData = gameSnap.data();
+            const mySymbol = gameData.players.X === currentUser.uid ? 'X' : 'O';
+
+            if (gameData.status === 'active' && gameData.currentPlayer === mySymbol && gameData.board[cellIndex] === '') {
+                playMoveSound(mySymbol);
+                const newBoard = [...gameData.board];
+                newBoard[cellIndex] = mySymbol;
+                const winner = checkWinner(newBoard);
+                let newStatus = winner ? 'win' : (isBoardFull(newBoard) ? 'draw' : 'active');
+                
+                await updateDoc(gameRef, {
+                    board: newBoard,
+                    currentPlayer: mySymbol === 'X' ? 'O' : 'X',
+                    status: newStatus,
+                    lastUpdated: serverTimestamp()
+                });
+            }
+        }
+
+        function listenToGameUpdates(gameId) {
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+            unsubscribeGameListener = onSnapshot(gameRef, (doc) => {
+                if (doc.exists()) {
+                    updateMultiplayerUI(doc.data());
+                } else {
+                    leaveGameButton.click();
+                }
+            });
+        }
+
+        function updateMultiplayerUI(gameData) {
+            resetBoardUI();
+            gameData.board.forEach((value, index) => {
+                cells[index].textContent = value;
+                if (value) cells[index].classList.add(value.toLowerCase());
+            });
+
+            const mySymbol = gameData.players.X === currentUser.uid ? 'X' : 'O';
+            playerInfo.textContent = `You are Player ${mySymbol}`;
+
+            const winner = checkWinner(gameData.board);
+            const opponentId = Object.values(gameData.players).find(id => id !== currentUser.uid);
+
+            if (gameData.status === 'win' || gameData.status === 'draw') {
+                replayView.classList.remove('hidden');
+                replayButton.disabled = false;
+                
+                if (gameData.status === 'win') {
+                    statusDisplay.textContent = winner === mySymbol ? 'You won!' : 'You lost!';
+                    const winningCombo = getWinningCombo(gameData.board);
+                    drawWinningLine(winningCombo);
+                    if (winner === mySymbol) {
+                        playWinSound();
+                        triggerFireworks();
+                    }
+                } else {
+                    statusDisplay.textContent = "It's a draw!";
+                }
+
+                // Replay logic
+                const replayRequests = gameData.replayRequest || {};
+                if (replayRequests[currentUser.uid]) {
+                    replayButton.disabled = true;
+                    replayStatus.textContent = 'Waiting for opponent...';
+                } else if (opponentId && replayRequests[opponentId]) {
+                    replayButton.textContent = 'Accept Replay';
+                    replayStatus.textContent = 'Opponent wants a replay!';
+                } else {
+                    replayButton.textContent = 'Request Replay';
+                    replayStatus.textContent = '';
+                }
+
+            } else {
+                replayView.classList.add('hidden');
+                if (gameData.status === 'waiting') {
+                    statusDisplay.textContent = 'Waiting for Player O...';
+                } else {
+                    statusDisplay.textContent = gameData.currentPlayer === mySymbol ? 'Your turn!' : "Opponent's turn";
+                }
+            }
+        }
+
+        // --- Replay Logic ---
+        replayButton.addEventListener('click', () => {
+            if (gameMode === 'single') {
+                startSinglePlayerGame();
+            } else {
+                handleReplayRequest();
+            }
+        });
+
+        async function handleReplayRequest() {
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+            
+            // Using dot notation for atomic update is crucial here
+            const updatePayload = {};
+            updatePayload[`replayRequest.${currentUser.uid}`] = true;
+            await updateDoc(gameRef, updatePayload);
+            
+            // Refetch the document to check the latest state
+            const updatedGameSnap = await getDoc(gameRef);
+            const updatedGameData = updatedGameSnap.data();
+            const replayRequests = updatedGameData.replayRequest || {};
+
+            if (Object.keys(replayRequests).length === 2) {
+                // Both players agreed, reset game
+                await updateDoc(gameRef, {
+                    board: Array(9).fill(''),
+                    currentPlayer: 'X',
+                    status: 'active',
+                    replayRequest: deleteField(),
+                    lastUpdated: serverTimestamp()
+                });
+            }
+        }
+        
+        // --- Chat Logic ---
+        function listenToChatUpdates(gameId) {
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+            const chatRef = collection(gameRef, 'chat');
+            const q = query(chatRef, orderBy('timestamp'));
+            
+            unsubscribeChatListener = onSnapshot(q, async (snapshot) => {
+                const gameSnap = await getDoc(gameRef);
+                const gameData = gameSnap.data();
+                const playerX_UID = gameData.players.X;
+
+                chatMessages.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const messageElement = document.createElement('div');
+                    const isMe = msg.senderId === currentUser.uid;
+                    const playerSymbol = msg.senderId === playerX_UID ? 'X' : 'O';
+                    
+                    const classes = ['p-2', 'rounded-lg', 'max-w-[80%]', 'w-fit', 'text-slate-800', 'dark:text-slate-200'];
+                    if (isMe) {
+                        classes.push('bg-sky-100', 'dark:bg-sky-900', 'self-end');
+                    } else {
+                        classes.push('bg-slate-200', 'dark:bg-slate-700', 'self-start');
+                    }
+                    messageElement.classList.add(...classes);
+
+                    messageElement.innerHTML = `<span class="font-bold mr-2">${playerSymbol}:</span>${msg.text}`;
+                    chatMessages.appendChild(messageElement);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+        
+        async function sendChatMessage(text) {
+            if (!text.trim() || !currentGameId) return;
+            const chatRef = collection(db, `artifacts/${appId}/public/data/games`, currentGameId, 'chat');
+            await addDoc(chatRef, {
+                text: text.trim(),
+                senderId: currentUser.uid,
+                timestamp: serverTimestamp()
+            });
+        }
+        
+        sendChatButton.addEventListener('click', () => {
+            sendChatMessage(chatInput.value);
+            chatInput.value = '';
+        });
+        
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendChatMessage(chatInput.value);
+                chatInput.value = '';
+            }
+        });
+        
+        quickChatButton.addEventListener('click', () => {
+            quickChatOptions.classList.toggle('hidden');
+        });
+        
+        // Populate quick chat options
+        quickChatOptions.innerHTML = ''; // Clear old options before repopulating
+        quickChatMessages.forEach(msg => {
+            const option = document.createElement('a');
+            option.href = '#';
+            option.textContent = msg;
+            option.classList.add('block', 'p-2', 'hover:bg-slate-200', 'dark:hover:bg-slate-600', 'rounded');
+            option.onclick = (e) => {
+                e.preventDefault();
+                sendChatMessage(msg);
+                quickChatOptions.classList.add('hidden');
+            };
+            quickChatOptions.appendChild(option);
+        });
+
+
+        // --- UI & Helper Functions ---
+        
+        function resetBoardUI() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o');
+            });
+            winningLine.setAttribute('x1', '0');
+            winningLine.setAttribute('y1', '0');
+            winningLine.setAttribute('x2', '0');
+            winningLine.setAttribute('y2', '0');
+            winningLine.style.strokeDashoffset = 1000;
+            replayView.classList.add('hidden');
+        }
+
+        function checkWinner(board) {
+            for (const condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+        
+        function getWinningCombo(board) {
+            for (const condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return condition;
+                }
+            }
+            return null;
+        }
+
+        function isBoardFull(board) {
+            return !board.includes('');
+        }
+        
+        function drawWinningLine(winningCombo) {
+            if (!winningCombo) return;
+            
+            // Use fixed positions for reliability
+            const positions = [
+                { x: 52, y: 52 }, { x: 154, y: 52 }, { x: 256, y: 52 },
+                { x: 52, y: 154 }, { x: 154, y: 154 }, { x: 256, y: 154 },
+                { x: 52, y: 256 }, { x: 154, y: 256 }, { x: 256, y: 256 }
+            ];
+
+            const startPos = positions[winningCombo[0]];
+            const endPos = positions[winningCombo[2]];
+            
+            winningLine.setAttribute('x1', startPos.x);
+            winningLine.setAttribute('y1', startPos.y);
+            winningLine.setAttribute('x2', endPos.x);
+            winningLine.setAttribute('y2', endPos.y);
+            
+            // Animate the line drawing
+            setTimeout(() => {
+                winningLine.style.strokeDashoffset = 0;
+            }, 100);
+        }
+        
+        // --- Fireworks ---
+        const fireworksCanvas = document.getElementById('fireworksCanvas');
+        const ctx = fireworksCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId;
+
+        function triggerFireworks() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            particles = [];
+            ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+            
+            // Create a few explosions
+            for (let i = 0; i < 7; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * fireworksCanvas.width;
+                    const y = Math.random() * (fireworksCanvas.height / 2);
+                    createExplosion(x, y);
+                }, Math.random() * 1000);
+            }
+            
+            animateFireworks();
+        }
+        
+        function createExplosion(x, y) {
+            const particleCount = 150;
+            const angleIncrement = (Math.PI * 2) / particleCount;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(x, y, i * angleIncrement));
+            }
+        }
+
+        class Particle {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                const speed = Math.random() * 6 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.gravity = 0.08;
+                this.friction = 0.98;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            }
+
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.015;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function animateFireworks() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+            
+            particles.forEach((p, index) => {
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    p.update();
+                    p.draw();
+                }
+            });
+
+            if (particles.length > 0) {
+                animationFrameId = requestAnimationFrame(animateFireworks);
+            } else {
+                ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                cancelAnimationFrame(animationFrameId);
+            }
+        }
+
+    </script>
+</body>
+</ht
