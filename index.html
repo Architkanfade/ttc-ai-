@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Tic Tac Toe</title>
+    <title>TIC TAC TOE</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter for a clean look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Tone.js for sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
         /* Custom styles for the game */
         body {
             font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent scrollbars from fireworks canvas */
         }
         .cell {
             width: 100px;
@@ -40,16 +43,57 @@
         }
         /* Hide elements by default */
         .hidden { display: none; }
+        
+        /* Fireworks Canvas */
+        #fireworksCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through */
+            z-index: 9999;
+        }
+        
+        /* Winning Line SVG */
+        #winning-line {
+            stroke: #ef4444; /* red-500 */
+            stroke-width: 10; /* Made the line thicker */
+            stroke-linecap: round;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            transition: stroke-dashoffset 0.5s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 flex items-center justify-center min-h-screen p-4">
+    
+    <canvas id="fireworksCanvas"></canvas>
 
     <!-- Main Container -->
     <div class="w-full max-w-md mx-auto text-center">
 
+        <!-- Mode Selection View -->
+        <div id="modeSelectionView">
+            <h1 class="text-4xl md:text-5xl font-bold mb-8 uppercase">TIC TAC TOE</h1>
+            <div class="space-y-4">
+                <div class="relative inline-block w-full">
+                    <button id="singlePlayerDropdownButton" class="w-full bg-sky-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-sky-600 transition-all flex items-center justify-center">
+                        Single Player (vs AI)
+                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="difficultyDropdown" class="hidden absolute w-full mt-2 bg-white dark:bg-slate-700 rounded-lg shadow-xl z-10">
+                        <a href="#" class="block px-4 py-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-t-lg difficulty-option" data-difficulty="easy">Easy</a>
+                        <a href="#" class="block px-4 py-3 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-b-lg difficulty-option" data-difficulty="hard">Hard (Unbeatable)</a>
+                    </div>
+                </div>
+                <button id="multiplayerButton" class="w-full bg-indigo-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-600 transition-all">Multiplayer</button>
+            </div>
+        </div>
+
         <!-- Sign-In View -->
-        <div id="signInView">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">Multiplayer Tic Tac Toe</h1>
+        <div id="signInView" class="hidden">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 uppercase">TIC TAC TOE</h1>
             <p id="signInStatus" class="text-slate-600 dark:text-slate-400 mb-8">Sign in to play with a friend.</p>
             <button id="signInButton" class="w-full bg-white text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all duration-300 flex items-center justify-center border border-gray-300 disabled:opacity-75">
                 <svg id="googleIcon" class="w-6 h-6 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.655-3.373-11.303-8H6.306C9.656,39.663,16.318,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C42.018,35.27,44,30.022,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
@@ -74,29 +118,39 @@
                     Start Game
                 </button>
             </div>
-             <button id="signOutButton" class="mt-6 text-sm text-slate-500 hover:text-sky-500">Sign Out</button>
+             <button id="signOutButton" class="mt-6 text-sm text-slate-500 hover:text-sky-500">Back to Mode Selection</button>
         </div>
 
         <!-- Game View -->
         <div id="gameView" class="hidden">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2">Game ID: <span id="gameIdDisplay" class="text-sky-500"></span></h1>
+            <h1 id="gameTitle" class="text-3xl md:text-4xl font-bold mb-2"></h1>
             <p id="status" class="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-4 h-8 transition-all"></p>
             <p id="playerInfo" class="text-md text-slate-500 dark:text-slate-400 mb-4 h-6"></p>
 
-            <div id="board" class="grid grid-cols-3 gap-2 bg-slate-300 dark:bg-slate-700 p-2 rounded-lg game-shadow mx-auto" style="width: 308px;">
-                <!-- 3x3 grid -->
-                <div data-cell-index="0" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="1" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="2" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="3" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="4" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="5" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="6" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="7" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
-                <div data-cell-index="8" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+            <div class="relative mx-auto" style="width: 308px; height: 308px;">
+                <div id="board" class="grid grid-cols-3 gap-2 bg-slate-300 dark:bg-slate-700 p-2 rounded-lg game-shadow absolute inset-0">
+                    <!-- 3x3 grid -->
+                    <div data-cell-index="0" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="1" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="2" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="3" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="4" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="5" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="6" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="7" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                    <div data-cell-index="8" class="cell rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"></div>
+                </div>
+                 <svg id="board-overlay" class="absolute inset-0 w-full h-full" style="pointer-events: none;">
+                    <line id="winning-line" x1="0" y1="0" x2="0" y2="0" />
+                </svg>
+            </div>
+            
+            <div id="replayView" class="hidden mt-8 text-center">
+                <p id="replayStatus" class="mb-4 text-lg"></p>
+                <button id="replayButton" class="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 disabled:opacity-50">Request Replay</button>
             </div>
 
-            <button id="leaveGameButton" class="mt-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all">
+            <button id="leaveGameButton" class="mt-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600">
                 Leave Game
             </button>
         </div>
@@ -106,7 +160,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'tictactoe-default';
@@ -131,315 +185,617 @@
             document.body.innerHTML = '<p class="text-red-500 text-center">Error: Could not connect to Firebase. Please check the console.</p>';
         }
 
+        // --- Sound Synthesis ---
+        let synth;
+        // Initialize synth on the first user interaction
+        document.body.addEventListener('click', () => {
+            if (Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+            if (!synth) {
+                synth = new Tone.Synth().toDestination();
+            }
+        }, { once: true });
+
+        function playMoveSound(player) {
+            if (synth && Tone.context.state === 'running') {
+                const note = player === 'X' ? 'C4' : 'E4';
+                synth.triggerAttackRelease(note, "8n", Tone.now());
+            }
+        }
+        
+        function playWinSound() {
+             if (synth && Tone.context.state === 'running') {
+                const now = Tone.now();
+                synth.triggerAttackRelease("C5", "8n", now);
+                synth.triggerAttackRelease("E5", "8n", now + 0.2);
+                synth.triggerAttackRelease("G5", "8n", now + 0.4);
+            }
+        }
+
         // --- DOM Element References ---
+        const modeSelectionView = document.getElementById('modeSelectionView');
+        const singlePlayerDropdownButton = document.getElementById('singlePlayerDropdownButton');
+        const difficultyDropdown = document.getElementById('difficultyDropdown');
+        const multiplayerButton = document.getElementById('multiplayerButton');
         const signInView = document.getElementById('signInView');
         const lobbyView = document.getElementById('lobbyView');
         const gameView = document.getElementById('gameView');
-
         const signInButton = document.getElementById('signInButton');
-        const signInStatus = document.getElementById('signInStatus');
-        const googleIcon = document.getElementById('googleIcon');
-        const spinnerIcon = document.getElementById('spinnerIcon');
-        const signInButtonText = document.getElementById('signInButtonText');
         const signOutButton = document.getElementById('signOutButton');
         const joinGameButton = document.getElementById('joinGameButton');
         const leaveGameButton = document.getElementById('leaveGameButton');
-
-        const userIdDisplay = document.getElementById('userIdDisplay');
-        const gameIdInput = document.getElementById('gameIdInput');
-        const gameIdDisplay = document.getElementById('gameIdDisplay');
-        
+        const gameTitle = document.getElementById('gameTitle');
         const statusDisplay = document.getElementById('status');
         const playerInfo = document.getElementById('playerInfo');
         const cells = document.querySelectorAll('.cell');
+        const winningLine = document.getElementById('winning-line');
+        const replayView = document.getElementById('replayView');
+        const replayButton = document.getElementById('replayButton');
+        const replayStatus = document.getElementById('replayStatus');
 
         // --- Game State Variables ---
+        let gameMode = null; // 'single' or 'multi'
+        let difficulty = 'easy'; // 'easy' or 'hard'
         let currentUser = null;
         let currentGameId = null;
-        let unsubscribeGameListener = null; // To stop listening to game updates
+        let unsubscribeGameListener = null; 
+        
+        // Single Player State
+        let singlePlayerState = {
+            board: Array(9).fill(''),
+            currentPlayer: 'X',
+            gameActive: true
+        };
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        // --- Mode Selection ---
+        singlePlayerDropdownButton.addEventListener('click', () => {
+            difficultyDropdown.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('.difficulty-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.preventDefault();
+                difficulty = e.target.dataset.difficulty;
+                gameMode = 'single';
+                modeSelectionView.classList.add('hidden');
+                difficultyDropdown.classList.add('hidden');
+                gameView.classList.remove('hidden');
+                startSinglePlayerGame();
+            });
+        });
+
+        multiplayerButton.addEventListener('click', () => {
+            gameMode = 'multi';
+            modeSelectionView.classList.add('hidden');
+            if (currentUser) {
+                lobbyView.classList.remove('hidden');
+            } else {
+                signInView.classList.remove('hidden');
+            }
+        });
 
         // --- Authentication ---
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in
-                currentUser = user;
-                signInView.classList.add('hidden');
-                lobbyView.classList.remove('hidden');
-                gameView.classList.add('hidden');
-                userIdDisplay.textContent = user.uid;
-            } else {
-                // User is signed out
-                currentUser = null;
-                signInView.classList.remove('hidden');
-                lobbyView.classList.add('hidden');
-                gameView.classList.add('hidden');
-                if (unsubscribeGameListener) unsubscribeGameListener();
-                 // Re-enable button and reset text if sign-out happens
-                signInButton.disabled = false;
-                signInStatus.textContent = 'Sign in to play with a friend.';
-                googleIcon.classList.remove('hidden');
-                spinnerIcon.classList.add('hidden');
-                signInButtonText.textContent = 'Sign in with Google';
+            currentUser = user;
+            if (gameMode === 'multi') {
+                if (user) {
+                    signInView.classList.add('hidden');
+                    lobbyView.classList.remove('hidden');
+                    document.getElementById('userIdDisplay').textContent = user.uid;
+                } else {
+                    signInView.classList.remove('hidden');
+                    lobbyView.classList.add('hidden');
+                    if (unsubscribeGameListener) unsubscribeGameListener();
+                }
             }
         });
 
         signInButton.addEventListener('click', async () => {
-            // Provide feedback to the user that something is happening
-            signInButton.disabled = true;
-            signInStatus.textContent = 'Opening Google Sign-in...';
-            googleIcon.classList.add('hidden');
-            spinnerIcon.classList.remove('hidden');
-            signInButtonText.textContent = 'Waiting for Google...';
-            
-            // Clear previous errors
-            const oldError = document.getElementById('signInError');
-            if(oldError) oldError.remove();
-
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
-                // The onAuthStateChanged listener will handle the successful sign-in
             } catch (error) {
-                // Log the full error object for better debugging
-                console.error("Full sign-in error object:", error);
-                
-                const signInErrorDisplay = document.createElement('div');
-                signInErrorDisplay.id = 'signInError';
-                signInErrorDisplay.classList.add('mt-4', 'p-4', 'bg-red-100', 'dark:bg-red-900', 'border', 'border-red-400', 'text-red-700', 'dark:text-red-300', 'rounded-lg', 'text-left', 'text-sm');
-
-                if (error.code === 'auth/unauthorized-domain') {
-                    signInErrorDisplay.innerHTML = `
-                        <p class="font-bold mb-2">Sign-in failed: Domain not authorized.</p>
-                        <p class="mb-2">This is a required security step. Please double-check that the domain was added correctly.</p>
-                        <b>To fix this:</b>
-                        <ol class="list-decimal list-inside mt-2">
-                            <li>Go to your Firebase Console → Authentication → Settings → Authorized domains.</li>
-                            <li>Click "Add domain" and enter this exact value:</li>
-                        </ol>
-                        <code class="block bg-slate-200 dark:bg-slate-700 p-2 rounded mt-2 text-slate-800 dark:text-slate-200 w-full text-center">scf.usercontent.goog</code>
-                        <p class="mt-2">Also, add <code class="bg-slate-200 dark:bg-slate-700 p-1 rounded">localhost</code> and <code class="bg-slate-200 dark:bg-slate-700 p-1 rounded">127.0.0.1</code> if they are not there.</p>
-                    `;
-                } else if (error.code === 'auth/popup-closed-by-user') {
-                    signInErrorDisplay.innerHTML = `<p class="font-bold">Sign-in cancelled.</p><p>The sign-in window was closed before completing.</p>`;
-                } else {
-                    signInErrorDisplay.innerHTML = `<p class="font-bold">An unknown sign-in error occurred.</p><p>Error code: ${error.code}. Check the console for more details.</p>`;
-                }
-                
-                // Append the error message below the button
-                if (signInButton) signInButton.after(signInErrorDisplay);
-                
-                // Re-enable the button and reset status on error
-                signInButton.disabled = false;
-                signInStatus.textContent = 'Sign in to play with a friend.';
-                googleIcon.classList.remove('hidden');
-                spinnerIcon.classList.add('hidden');
-                signInButtonText.textContent = 'Sign in with Google';
+                console.error("Sign in failed", error);
             }
         });
 
         signOutButton.addEventListener('click', async () => {
-            try {
+            if (gameMode === 'multi') {
                 await signOut(auth);
-            } catch (error) {
-                console.error("Sign out failed", error);
             }
+            lobbyView.classList.add('hidden');
+            modeSelectionView.classList.remove('hidden');
         });
 
-        // --- Game Lobby Logic ---
-        joinGameButton.addEventListener('click', async () => {
-            const gameId = gameIdInput.value.trim();
-            if (!gameId) {
-                alert("Please enter a Game ID.");
-                return;
+        // --- Game Logic ---
+        
+        function handleCellClick(event) {
+            const cellIndex = parseInt(event.target.getAttribute('data-cell-index'));
+            if (gameMode === 'single') {
+                handleSinglePlayerMove(cellIndex);
+            } else if (gameMode === 'multi') {
+                handleMultiplayerMove(cellIndex);
             }
-            if (!currentUser) {
-                alert("You must be signed in to play.");
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        leaveGameButton.addEventListener('click', () => {
+            gameView.classList.add('hidden');
+            modeSelectionView.classList.remove('hidden');
+            if (unsubscribeGameListener) {
+                unsubscribeGameListener();
+                unsubscribeGameListener = null;
+            }
+            resetBoardUI();
+        });
+        
+        // --- Single Player Mode ---
+        
+        function startSinglePlayerGame() {
+            gameTitle.textContent = `VS AI (${difficulty.toUpperCase()})`;
+            playerInfo.textContent = 'You are Player X';
+            singlePlayerState = {
+                board: Array(9).fill(''),
+                currentPlayer: 'X',
+                gameActive: true
+            };
+            resetBoardUI();
+            updateSinglePlayerUI();
+        }
+
+        function handleSinglePlayerMove(cellIndex) {
+            if (!singlePlayerState.gameActive || singlePlayerState.board[cellIndex] !== '' || singlePlayerState.currentPlayer !== 'X') {
                 return;
             }
             
+            playMoveSound('X');
+            singlePlayerState.board[cellIndex] = 'X';
+            singlePlayerState.currentPlayer = 'O';
+            updateSinglePlayerUI();
+            
+            const winner = checkWinner(singlePlayerState.board);
+            if (winner) {
+                endSinglePlayerGame(winner);
+                return;
+            }
+            if (isBoardFull(singlePlayerState.board)) {
+                endSinglePlayerGame('Draw');
+                return;
+            }
+
+            // AI's turn
+            setTimeout(makeAIMove, 500);
+        }
+
+        function makeAIMove() {
+            if (!singlePlayerState.gameActive) return;
+
+            let move;
+            if (difficulty === 'easy') {
+                let availableCells = [];
+                singlePlayerState.board.forEach((cell, index) => {
+                    if (cell === '') availableCells.push(index);
+                });
+                move = availableCells[Math.floor(Math.random() * availableCells.length)];
+            } else { // Hard mode
+                move = findBestMove(singlePlayerState.board);
+            }
+            
+            playMoveSound('O');
+            singlePlayerState.board[move] = 'O';
+            singlePlayerState.currentPlayer = 'X';
+            updateSinglePlayerUI();
+
+            const winner = checkWinner(singlePlayerState.board);
+            if (winner) {
+                endSinglePlayerGame(winner);
+                return;
+            }
+             if (isBoardFull(singlePlayerState.board)) {
+                endSinglePlayerGame('Draw');
+                return;
+            }
+        }
+        
+        function updateSinglePlayerUI() {
+            singlePlayerState.board.forEach((value, index) => {
+                cells[index].textContent = value;
+                cells[index].classList.remove('x', 'o');
+                if (value) cells[index].classList.add(value.toLowerCase());
+            });
+            statusDisplay.textContent = singlePlayerState.gameActive ? `Player ${singlePlayerState.currentPlayer}'s turn` : statusDisplay.textContent;
+        }
+
+        function endSinglePlayerGame(winner) {
+            singlePlayerState.gameActive = false;
+            if (winner === 'Draw') {
+                statusDisplay.textContent = "It's a draw!";
+            } else {
+                statusDisplay.textContent = `Player ${winner} has won!`;
+                const winningCombo = getWinningCombo(singlePlayerState.board);
+                drawWinningLine(winningCombo);
+                playWinSound();
+                if (winner === 'X') {
+                    triggerFireworks();
+                }
+            }
+            replayView.classList.remove('hidden');
+            replayButton.textContent = "Play Again";
+            replayStatus.textContent = '';
+        }
+
+        // --- Minimax AI for Hard Mode ---
+        function findBestMove(board) {
+            let bestVal = -1000;
+            let bestMove = -1;
+
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'O'; // AI is 'O'
+                    let moveVal = minimax(board, 0, false);
+                    board[i] = ''; // Undo move
+                    if (moveVal > bestVal) {
+                        bestMove = i;
+                        bestVal = moveVal;
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+        function minimax(board, depth, isMax) {
+            let score = evaluate(board);
+            if (score === 10) return score - depth;
+            if (score === -10) return score + depth;
+            if (isBoardFull(board)) return 0;
+
+            if (isMax) { // Maximizer's move (AI)
+                let best = -1000;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'O';
+                        best = Math.max(best, minimax(board, depth + 1, !isMax));
+                        board[i] = '';
+                    }
+                }
+                return best;
+            } else { // Minimizer's move (Player)
+                let best = 1000;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'X';
+                        best = Math.min(best, minimax(board, depth + 1, !isMax));
+                        board[i] = '';
+                    }
+                }
+                return best;
+            }
+        }
+
+        function evaluate(b) {
+            for (const condition of winningConditions) {
+                const [a, b_idx, c] = condition;
+                if (b[a] && b[a] === b[b_idx] && b[a] === b[c]) {
+                    if (b[a] === 'O') return 10; // AI wins
+                    if (b[a] === 'X') return -10; // Player wins
+                }
+            }
+            return 0; // No winner yet
+        }
+
+
+        // --- Multiplayer Mode ---
+        
+        joinGameButton.addEventListener('click', async () => {
+            const gameId = document.getElementById('gameIdInput').value.trim();
+            if (!gameId || !currentUser) return;
+            
             currentGameId = gameId;
             const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
+            const gameSnap = await getDoc(gameRef);
 
-            try {
-                const gameSnap = await getDoc(gameRef);
-
-                if (gameSnap.exists()) {
-                    // Game exists, try to join as player 'O'
-                    const gameData = gameSnap.data();
-                    if (gameData.players.O) {
-                        // If player O is already taken, check if current user is one of the players
-                         if(gameData.players.X !== currentUser.uid && gameData.players.O !== currentUser.uid) {
-                            alert("This game is full.");
-                            return;
-                         }
-                    } else if (gameData.players.X !== currentUser.uid) {
-                        // Join as player 'O'
-                        await updateDoc(gameRef, {
-                            'players.O': currentUser.uid,
-                            status: 'active'
-                        });
-                    }
-                } else {
-                    // Game does not exist, create it
-                    await setDoc(gameRef, {
-                        board: Array(9).fill(''),
-                        players: { X: currentUser.uid, O: null },
-                        currentPlayer: 'X',
-                        status: 'waiting', // waiting for player O
-                        gameId: gameId
-                    });
+            if (gameSnap.exists()) {
+                const gameData = gameSnap.data();
+                if (!gameData.players.O && gameData.players.X !== currentUser.uid) {
+                    await updateDoc(gameRef, { 'players.O': currentUser.uid, status: 'active' });
                 }
-
-                // Switch to game view and start listening for updates
-                lobbyView.classList.add('hidden');
-                gameView.classList.remove('hidden');
-                gameIdDisplay.textContent = gameId;
-                listenToGameUpdates(gameId);
-
-            } catch (error) {
-                console.error("Error creating/joining game:", error);
-                alert("Could not create or join the game. See console for details.");
+            } else {
+                await setDoc(gameRef, {
+                    board: Array(9).fill(''),
+                    players: { X: currentUser.uid, O: null },
+                    currentPlayer: 'X',
+                    status: 'waiting',
+                    gameId: gameId,
+                    replayRequest: {}
+                });
             }
+            
+            lobbyView.classList.add('hidden');
+            gameView.classList.remove('hidden');
+            gameTitle.innerHTML = `Game ID: <span class="text-sky-500">${gameId}</span>`;
+            listenToGameUpdates(gameId);
         });
 
-        leaveGameButton.addEventListener('click', () => {
-            if (unsubscribeGameListener) {
-                unsubscribeGameListener(); // Stop listening
-                unsubscribeGameListener = null;
-            }
-            currentGameId = null;
-            gameView.classList.add('hidden');
-            lobbyView.classList.remove('hidden');
-        });
+        async function handleMultiplayerMove(cellIndex) {
+            if (!currentGameId) return;
 
-        // --- Real-time Game Logic ---
+            const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+            const gameSnap = await getDoc(gameRef);
+            if (!gameSnap.exists()) return;
+
+            const gameData = gameSnap.data();
+            const mySymbol = gameData.players.X === currentUser.uid ? 'X' : 'O';
+
+            if (gameData.status === 'active' && gameData.currentPlayer === mySymbol && gameData.board[cellIndex] === '') {
+                playMoveSound(mySymbol);
+                const newBoard = [...gameData.board];
+                newBoard[cellIndex] = mySymbol;
+                const winner = checkWinner(newBoard);
+                let newStatus = winner ? 'win' : (isBoardFull(newBoard) ? 'draw' : 'active');
+                
+                await updateDoc(gameRef, {
+                    board: newBoard,
+                    currentPlayer: mySymbol === 'X' ? 'O' : 'X',
+                    status: newStatus
+                });
+            }
+        }
+
         function listenToGameUpdates(gameId) {
             const gameRef = doc(db, `artifacts/${appId}/public/data/games`, gameId);
             unsubscribeGameListener = onSnapshot(gameRef, (doc) => {
                 if (doc.exists()) {
-                    const gameData = doc.data();
-                    updateUI(gameData);
+                    updateMultiplayerUI(doc.data());
                 } else {
-                    // Game was deleted or does not exist
-                    alert("The game session has ended.");
                     leaveGameButton.click();
                 }
             });
         }
 
-        function updateUI(gameData) {
-            // Update board
+        function updateMultiplayerUI(gameData) {
+            resetBoardUI();
             gameData.board.forEach((value, index) => {
-                const cell = cells[index];
-                cell.textContent = value;
-                cell.classList.remove('x', 'o');
-                if (value) {
-                    cell.classList.add(value.toLowerCase());
-                }
+                cells[index].textContent = value;
+                if (value) cells[index].classList.add(value.toLowerCase());
             });
 
-            // Update status and player info
-            const amIPlayerX = gameData.players.X === currentUser.uid;
-            const amIPlayerO = gameData.players.O === currentUser.uid;
-            let mySymbol = null;
-            if(amIPlayerX) mySymbol = 'X';
-            if(amIPlayerO) mySymbol = 'O';
+            const mySymbol = gameData.players.X === currentUser.uid ? 'X' : 'O';
+            playerInfo.textContent = `You are Player ${mySymbol}`;
 
-            playerInfo.textContent = `You are Player ${mySymbol || 'Spectator'}`;
-            
             const winner = checkWinner(gameData.board);
-            if (winner) {
-                gameData.status = 'win';
-            } else if (!gameData.board.includes('')) {
-                gameData.status = 'draw';
-            }
+            const opponentId = Object.values(gameData.players).find(id => id !== currentUser.uid);
 
-            switch (gameData.status) {
-                case 'waiting':
-                    statusDisplay.textContent = 'Waiting for Player O to join...';
-                    break;
-                case 'active':
-                    if (gameData.currentPlayer === mySymbol) {
-                        statusDisplay.textContent = 'Your turn!';
-                        statusDisplay.classList.add('text-green-500', 'font-bold');
-                    } else {
-                        statusDisplay.textContent = `Opponent's turn (${gameData.currentPlayer})`;
-                        statusDisplay.classList.remove('text-green-500', 'font-bold');
+            if (gameData.status === 'win' || gameData.status === 'draw') {
+                replayView.classList.remove('hidden');
+                replayButton.disabled = false;
+                
+                if (gameData.status === 'win') {
+                    statusDisplay.textContent = winner === mySymbol ? 'You won!' : 'You lost!';
+                    const winningCombo = getWinningCombo(gameData.board);
+                    drawWinningLine(winningCombo);
+                    if (winner === mySymbol) {
+                        playWinSound();
+                        triggerFireworks();
                     }
-                    break;
-                case 'win':
-                    const winnerSymbol = checkWinner(gameData.board);
-                    if (winnerSymbol === mySymbol) {
-                        statusDisplay.textContent = 'You won!';
-                    } else {
-                        statusDisplay.textContent = 'You lost!';
-                    }
-                    break;
-                case 'draw':
+                } else {
                     statusDisplay.textContent = "It's a draw!";
-                    break;
+                }
+
+                // Replay logic
+                const replayRequests = gameData.replayRequest || {};
+                if (replayRequests[currentUser.uid]) {
+                    replayButton.disabled = true;
+                    replayStatus.textContent = 'Waiting for opponent...';
+                } else if (opponentId && replayRequests[opponentId]) {
+                    replayButton.textContent = 'Accept Replay';
+                    replayStatus.textContent = 'Opponent wants a replay!';
+                } else {
+                    replayButton.textContent = 'Request Replay';
+                    replayStatus.textContent = '';
+                }
+
+            } else {
+                replayView.classList.add('hidden');
+                if (gameData.status === 'waiting') {
+                    statusDisplay.textContent = 'Waiting for Player O...';
+                } else {
+                    statusDisplay.textContent = gameData.currentPlayer === mySymbol ? 'Your turn!' : "Opponent's turn";
+                }
             }
         }
 
-        // --- Player Actions ---
-        cells.forEach(cell => {
-            cell.addEventListener('click', handleCellClick);
+        // --- Replay Logic ---
+        replayButton.addEventListener('click', () => {
+            if (gameMode === 'single') {
+                startSinglePlayerGame();
+            } else {
+                handleReplayRequest();
+            }
         });
 
-        async function handleCellClick(event) {
-            if (!currentGameId) return;
-
-            const cellIndex = parseInt(event.target.getAttribute('data-cell-index'));
+        async function handleReplayRequest() {
             const gameRef = doc(db, `artifacts/${appId}/public/data/games`, currentGameId);
+            const gameSnap = await getDoc(gameRef);
+            if (!gameSnap.exists()) return;
 
-            try {
-                const gameSnap = await getDoc(gameRef);
-                if (!gameSnap.exists()) return;
+            const gameData = gameSnap.data();
+            const replayRequests = gameData.replayRequest || {};
+            replayRequests[currentUser.uid] = true;
 
-                const gameData = gameSnap.data();
-                const amIPlayerX = gameData.players.X === currentUser.uid;
-                const amIPlayerO = gameData.players.O === currentUser.uid;
-                const mySymbol = amIPlayerX ? 'X' : (amIPlayerO ? 'O' : null);
-
-                // Check if it's the player's turn, the game is active, and the cell is empty
-                if (gameData.status === 'active' && gameData.currentPlayer === mySymbol && gameData.board[cellIndex] === '') {
-                    const newBoard = [...gameData.board];
-                    newBoard[cellIndex] = mySymbol;
-
-                    const newCurrentPlayer = mySymbol === 'X' ? 'O' : 'X';
-                    
-                    let newStatus = 'active';
-                    const winner = checkWinner(newBoard);
-                    if (winner) {
-                        newStatus = 'win';
-                    } else if (!newBoard.includes('')) {
-                        newStatus = 'draw';
-                    }
-
-                    await updateDoc(gameRef, {
-                        board: newBoard,
-                        currentPlayer: newCurrentPlayer,
-                        status: newStatus
-                    });
-                }
-            } catch (error) {
-                console.error("Error making a move:", error);
+            if (Object.keys(replayRequests).length === 2) {
+                // Both players agreed, reset game
+                await updateDoc(gameRef, {
+                    board: Array(9).fill(''),
+                    currentPlayer: 'X',
+                    status: 'active',
+                    replayRequest: deleteField()
+                });
+            } else {
+                // Just update my request
+                await updateDoc(gameRef, { replayRequest });
             }
+        }
+
+
+        // --- UI & Helper Functions ---
+        
+        function resetBoardUI() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o');
+            });
+            winningLine.setAttribute('x1', '0');
+            winningLine.setAttribute('y1', '0');
+            winningLine.setAttribute('x2', '0');
+            winningLine.setAttribute('y2', '0');
+            winningLine.style.strokeDashoffset = 1000;
+            replayView.classList.add('hidden');
         }
 
         function checkWinner(board) {
-            const winningConditions = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-                [0, 4, 8], [2, 4, 6]             // Diagonals
-            ];
-            for (let i = 0; i < winningConditions.length; i++) {
-                const [a, b, c] = winningConditions[i];
+            for (const condition of winningConditions) {
+                const [a, b, c] = condition;
                 if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-                    return board[a]; // Returns 'X' or 'O'
+                    return board[a];
                 }
             }
-            return null; // No winner
+            return null;
+        }
+        
+        function getWinningCombo(board) {
+            for (const condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return condition;
+                }
+            }
+            return null;
+        }
+
+        function isBoardFull(board) {
+            return !board.includes('');
+        }
+        
+        function drawWinningLine(winningCombo) {
+            if (!winningCombo) return;
+            
+            // Use fixed positions for reliability
+            const positions = [
+                { x: 52, y: 52 }, { x: 154, y: 52 }, { x: 256, y: 52 },
+                { x: 52, y: 154 }, { x: 154, y: 154 }, { x: 256, y: 154 },
+                { x: 52, y: 256 }, { x: 154, y: 256 }, { x: 256, y: 256 }
+            ];
+
+            const startPos = positions[winningCombo[0]];
+            const endPos = positions[winningCombo[2]];
+            
+            winningLine.setAttribute('x1', startPos.x);
+            winningLine.setAttribute('y1', startPos.y);
+            winningLine.setAttribute('x2', endPos.x);
+            winningLine.setAttribute('y2', endPos.y);
+            
+            // Animate the line drawing
+            setTimeout(() => {
+                winningLine.style.strokeDashoffset = 0;
+            }, 100);
+        }
+        
+        // --- Fireworks ---
+        const fireworksCanvas = document.getElementById('fireworksCanvas');
+        const ctx = fireworksCanvas.getContext('2d');
+        let particles = [];
+        let animationFrameId;
+
+        function triggerFireworks() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            particles = [];
+            ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+            
+            // Create a few explosions
+            for (let i = 0; i < 7; i++) {
+                setTimeout(() => {
+                    const x = Math.random() * fireworksCanvas.width;
+                    const y = Math.random() * (fireworksCanvas.height / 2);
+                    createExplosion(x, y);
+                }, Math.random() * 1000);
+            }
+            
+            animateFireworks();
+        }
+        
+        function createExplosion(x, y) {
+            const particleCount = 150;
+            const angleIncrement = (Math.PI * 2) / particleCount;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle(x, y, i * angleIncrement));
+            }
+        }
+
+        class Particle {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                const speed = Math.random() * 6 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.gravity = 0.08;
+                this.friction = 0.98;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            }
+
+            update() {
+                this.vx *= this.friction;
+                this.vy *= this.friction;
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.015;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function animateFireworks() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+            
+            particles.forEach((p, index) => {
+                if (p.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    p.update();
+                    p.draw();
+                }
+            });
+
+            if (particles.length > 0) {
+                animationFrameId = requestAnimationFrame(animateFireworks);
+            } else {
+                ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+                cancelAnimationFrame(animationFrameId);
+            }
         }
 
     </script>
