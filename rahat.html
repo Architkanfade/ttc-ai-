@@ -1,0 +1,472 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rahat Fragrance - Dare to be Different</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter & Playfair Display -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Icons: Lucide -->
+    <script src="https://unpkg.com/lucide-react@latest/dist/lucide.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            },
+            colors: {
+              'brand-gold': '#D4AF37',
+              'brand-dark': '#1a1a1a',
+              'brand-light': '#f5f5f5',
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+        /* Custom styles for a more polished look */
+        body {
+            background-color: #f8f6f4; /* A warmer light color */
+            color: var(--brand-dark);
+            font-family: 'Inter', sans-serif;
+        }
+        .product-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .nav-link {
+            position: relative;
+            transition: color 0.3s;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #D4AF37;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .btn-primary {
+            background-color: #1a1a1a;
+            color: white;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+            transform: scale(1.05);
+        }
+        .btn-secondary {
+            background-color: transparent;
+            color: #1a1a1a;
+            border: 1px solid #1a1a1a;
+            transition: background-color 0.3s, color 0.3s, transform 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #1a1a1a;
+            color: white;
+            transform: scale(1.05);
+        }
+        .icon-btn {
+            transition: color 0.3s, transform 0.2s;
+        }
+        .icon-btn:hover {
+            color: #D4AF37;
+            transform: scale(1.1);
+        }
+        .liked {
+            color: #ef4444; /* red-500 */
+        }
+        .hero-section {
+            position: relative;
+            background-image: url('https://images.unsplash.com/photo-1563291953-27b337f6d160?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-brand-light">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo and Brand Name -->
+            <a href="#" class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-brand-dark text-brand-gold rounded-full flex items-center justify-center font-serif text-2xl font-bold">
+                    RF
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-brand-dark">RAHAT</h1>
+                    <p class="text-xs text-gray-500 tracking-widest">FRAGRANCE</p>
+                </div>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#home" class="nav-link text-gray-700 hover:text-brand-dark font-medium">Home</a>
+                <a href="#deals" class="nav-link text-gray-700 hover:text-brand-dark font-medium">Deals</a>
+                <a href="#account" class="nav-link text-gray-700 hover:text-brand-dark font-medium">Account</a>
+            </div>
+
+            <!-- Search and Login -->
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden sm:block">
+                    <input type="text" placeholder="Search scents..." class="pl-10 pr-4 py-2 w-48 rounded-full border border-gray-300 focus:ring-2 focus:ring-brand-gold focus:outline-none transition">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                </div>
+                <button class="icon-btn text-gray-600">
+                    <i data-lucide="user" class="w-6 h-6"></i>
+                </button>
+                <button class="icon-btn text-gray-600 relative">
+                    <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+                    <span class="absolute -top-2 -right-2 bg-brand-gold text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">3</span>
+                </button>
+                 <button class="md:hidden icon-btn text-gray-600" id="mobile-menu-button">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-2 bg-white/80 backdrop-blur-lg">
+             <a href="#home" class="block text-gray-700 hover:text-brand-dark font-medium">Home</a>
+             <a href="#deals" class="block text-gray-700 hover:text-brand-dark font-medium">Deals</a>
+             <a href="#account" class="block text-gray-700 hover:text-brand-dark font-medium">Account</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="hero-content container mx-auto px-6 py-24 md:py-40 text-center">
+                <h1 class="text-4xl md:text-6xl font-serif font-bold mb-4 leading-tight">Scent of Distinction</h1>
+                <p class="text-lg md:text-xl text-gray-200 max-w-3xl mx-auto">Dare to be Different. Discover unique, natural perfumes that tell your story.</p>
+                <button class="mt-8 px-8 py-3 bg-white text-brand-dark rounded-full font-semibold transition-transform transform hover:scale-105">Explore Collections</button>
+            </div>
+        </section>
+
+        <!-- Product Section -->
+        <section id="products" class="container mx-auto px-6 py-16 md:py-24">
+            <!-- Filters and Sorting -->
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                <h2 class="text-3xl font-serif font-bold text-brand-dark">Our Collections</h2>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <select class="appearance-none bg-white border border-gray-300 rounded-full py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-gold">
+                            <option>Filter by</option>
+                            <option>Floral</option>
+                            <option>Woody</option>
+                            <option>Citrus</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
+                    </div>
+                    <div class="relative">
+                        <select class="appearance-none bg-white border border-gray-300 rounded-full py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-gold">
+                            <option>Sort by</option>
+                            <option>Price: Low to High</option>
+                            <option>Price: High to Low</option>
+                            <option>Top Rated</option>
+                        </select>
+                         <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products for Women -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-serif font-semibold text-center mb-8">For Women</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Product Card 1 -->
+                    <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative">
+                            <img src="https://placehold.co/400x500/f2e9e4/4a4e69?text=Aura+Bloom" alt="Aura Bloom Perfume Bottle" class="w-full h-80 object-cover">
+                            <span class="absolute top-4 left-4 bg-brand-gold text-white text-xs font-bold px-3 py-1 rounded-full">25% OFF</span>
+                            <div class="absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="like-btn icon-btn bg-white/70 backdrop-blur-sm p-2 rounded-full text-gray-600">
+                                    <i data-lucide="heart" class="w-5 h-5"></i>
+                                </button>
+                                <button class="icon-btn bg-white/70 backdrop-blur-sm p-2 rounded-full text-gray-600">
+                                    <i data-lucide="share-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Aura Bloom</h4>
+                            <p class="text-gray-500 mb-2">Floral & Powdery</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3">
+                                <span class="text-xl font-bold text-brand-dark">₹6,299</span>
+                                <span class="text-sm text-gray-400 line-through">₹8,399</span>
+                            </div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 text-gray-300 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(128)</span>
+                            </div>
+                            <div class="space-y-2">
+                                <button class="w-full py-2 rounded-full btn-primary">Add to Cart</button>
+                                <button class="w-full py-2 rounded-full btn-secondary">Buy Now</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Product Card 2 -->
+                     <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative"><img src="https://placehold.co/400x500/e0c9a6/2d3142?text=Velvet+Dusk" alt="Velvet Dusk Perfume Bottle" class="w-full h-80 object-cover"></div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Velvet Dusk</h4>
+                            <p class="text-gray-500 mb-2">Spicy & Warm</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹7,199</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(210)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                    <!-- Product Card 3 -->
+                     <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative"><img src="https://placehold.co/400x500/cddafd/4f5d75?text=Citrus+Glow" alt="Citrus Glow Perfume Bottle" class="w-full h-80 object-cover"></div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Citrus Glow</h4>
+                            <p class="text-gray-500 mb-2">Fresh & Zesty</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹5,699</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 text-gray-300 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(95)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                    <!-- Product Card 4 -->
+                     <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative">
+                            <img src="https://placehold.co/400x500/fec5bb/d81159?text=Rose+Whisper" alt="Rose Whisper Perfume Bottle" class="w-full h-80 object-cover">
+                             <span class="absolute top-4 left-4 bg-brand-gold text-white text-xs font-bold px-3 py-1 rounded-full">NEW</span>
+                        </div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Rose Whisper</h4>
+                            <p class="text-gray-500 mb-2">Delicate & Romantic</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹7,799</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(150)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products for Men -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-serif font-semibold text-center mb-8">For Men</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Product Card 1 -->
+                    <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative"><img src="https://placehold.co/400x500/2c3e50/ecf0f1?text=Terra+Noir" alt="Terra Noir Perfume Bottle" class="w-full h-80 object-cover"></div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Terra Noir</h4>
+                            <p class="text-gray-500 mb-2">Earthy & Woody</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹7,599</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(340)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                    <!-- Product Card 2 -->
+                    <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative">
+                            <img src="https://placehold.co/400x500/4f6d7a/c0d6df?text=Ocean+Drift" alt="Ocean Drift Perfume Bottle" class="w-full h-80 object-cover">
+                            <span class="absolute top-4 left-4 bg-brand-gold text-white text-xs font-bold px-3 py-1 rounded-full">15% OFF</span>
+                        </div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Ocean Drift</h4>
+                            <p class="text-gray-500 mb-2">Aquatic & Fresh</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3">
+                                <span class="text-xl font-bold text-brand-dark">₹5,999</span>
+                                <span class="text-sm text-gray-400 line-through">₹7,199</span>
+                            </div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 text-gray-300 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(199)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                    <!-- Product Card 3 -->
+                     <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative"><img src="https://placehold.co/400x500/8d5b4c/ede0d4?text=Spiced+Ember" alt="Spiced Ember Perfume Bottle" class="w-full h-80 object-cover"></div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Spiced Ember</h4>
+                            <p class="text-gray-500 mb-2">Leather & Tobacco</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹8,299</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(256)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                    <!-- Product Card 4 -->
+                     <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group">
+                        <div class="relative"><img src="https://placehold.co/400x500/a3b18a/344e41?text=Forest+Reserve" alt="Forest Reserve Perfume Bottle" class="w-full h-80 object-cover"></div>
+                        <div class="p-5 text-center">
+                            <h4 class="text-lg font-semibold text-brand-dark">Forest Reserve</h4>
+                            <p class="text-gray-500 mb-2">Green & Crisp</p>
+                            <div class="flex justify-center items-center space-x-2 mb-3"><span class="text-xl font-bold text-brand-dark">₹7,399</span></div>
+                            <div class="flex justify-center items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 text-gray-300 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(174)</span>
+                            </div>
+                            <div class="space-y-2"><button class="w-full py-2 rounded-full btn-primary">Add to Cart</button><button class="w-full py-2 rounded-full btn-secondary">Buy Now</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Gift Hampers -->
+            <div>
+                <h3 class="text-2xl font-serif font-semibold text-center mb-8">Luxury Gift Hampers</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
+                    <!-- Hamper Card 1 -->
+                    <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group flex flex-col md:flex-row">
+                        <img src="https://placehold.co/600x400/f4e1d2/5c4742?text=Signature+Hamper" alt="Signature Gift Hamper" class="w-full md:w-1/2 h-80 md:h-auto object-cover">
+                        <div class="p-6 flex flex-col justify-center text-center md:text-left">
+                            <h4 class="text-xl font-semibold text-brand-dark">The Signature Collection</h4>
+                            <p class="text-gray-500 mb-2">A curated set of our 4 best-sellers.</p>
+                            <div class="flex justify-center md:justify-start items-center space-x-2 mb-3"><span class="text-2xl font-bold text-brand-dark">₹12,999</span></div>
+                            <div class="flex justify-center md:justify-start items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(88)</span>
+                            </div>
+                            <div class="space-y-2 mt-auto">
+                                <button class="w-full py-2 rounded-full btn-primary">Add to Cart</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hamper Card 2 -->
+                    <div class="product-card bg-white rounded-lg shadow-md overflow-hidden group flex flex-col md:flex-row">
+                        <img src="https://placehold.co/600x400/d6cbd3/6d597a?text=Couple's+Delight" alt="Couple's Delight Hamper" class="w-full md:w-1/2 h-80 md:h-auto object-cover">
+                        <div class="p-6 flex flex-col justify-center text-center md:text-left">
+                            <h4 class="text-xl font-semibold text-brand-dark">Couple's Delight Hamper</h4>
+                            <p class="text-gray-500 mb-2">One signature fragrance for him & her.</p>
+                            <div class="flex justify-center md:justify-start items-center space-x-2 mb-3"><span class="text-2xl font-bold text-brand-dark">₹15,499</span></div>
+                            <div class="flex justify-center md:justify-start items-center text-amber-400 mb-4">
+                                <i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i><i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                                <span class="text-xs text-gray-500 ml-2">(102)</span>
+                            </div>
+                            <div class="space-y-2 mt-auto">
+                                <button class="w-full py-2 rounded-full btn-primary">Add to Cart</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-brand-dark text-brand-light mt-16">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Brand Info -->
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Rahat Fragrance</h3>
+                    <p class="text-gray-400">Dare to be Different.</p>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><i data-lucide="facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i data-lucide="instagram"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i data-lucide="twitter"></i></a>
+                    </div>
+                </div>
+                <!-- Links -->
+                <div>
+                    <h4 class="font-semibold mb-4">Shop</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">For Women</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">For Men</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Gift Hampers</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">New Arrivals</a></li>
+                    </ul>
+                </div>
+                <!-- Support -->
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">FAQ</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Shipping & Returns</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white">Track Order</a></li>
+                    </ul>
+                </div>
+                <!-- Newsletter -->
+                <div>
+                    <h4 class="font-semibold mb-4">Join Our Newsletter</h4>
+                    <p class="text-gray-400 mb-4">Get 10% off your first order.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-md focus:outline-none focus:ring-2 focus:ring-brand-gold text-white">
+                        <button class="bg-brand-gold text-brand-dark font-bold px-4 py-2 rounded-r-md hover:bg-amber-400 transition-colors">Sign Up</button>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-6 text-center text-gray-500 text-sm">
+                <p>&copy; 2024 Rahat Fragrance. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+        
+        // Mobile Menu Toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Like button functionality
+        const likeButtons = document.querySelectorAll('.like-btn');
+        likeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                button.classList.toggle('liked');
+                // In a real app, you would also send this to a server
+            });
+        });
+    </script>
+</body>
+</html

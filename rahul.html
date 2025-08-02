@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Race - Firebase Edition</title>
+    <style>
+        /* Basic styling for the game */
+        body { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background-color: #2c3e50; font-family: sans-serif; color: #ecf0f1; }
+        h1 { color: #f1c40f; }
+        #authScreen { text-align: center; }
+        #loginButton { padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #2ecc71; border: none; color: white; border-radius: 5px; }
+        #gameContainer { display: none; position: relative; width: 300px; height: 500px; background-color: #4a627a; border: 5px solid #bdc3c7; border-radius: 10px; overflow: hidden; }
+        .car { position: absolute; width: 50px; height: 80px; background-color: #2ecc71; border-radius: 10px; border: 2px solid #1e8449; box-sizing: border-box; }
+        /* Style for other players' cars */
+        .other-car { background-color: #e74c3c; border-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <h1>Retro Race: Firebase</h1>
+
+    <div id="authScreen">
+        <p>Sign in to join the race!</p>
+        <button id="loginButton">Sign In with Google</button>
+    </div>
+
+    <div id="gameContainer">
+        <div id="playerCar" class="car"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // ⬇️ IMPORTANT: Paste your Firebase config object here! ⬇️
+        const firebaseConfig = {
+            apiKey: "AIzaSyCetAMtOhv1J0gTrQ0Es5Dc0OKiFvihQQI",
+            authDomain: "carrahul.firebaseapp.com",
+            projectId: "carrahul",
+            storageBucket: "carrahul.firebasestorage.app",
+            messagingSenderId: "63659564230",
+            appId: "1:63659564230:web:f8a0c53a4e9c9cd2c4cbc7",
+            measurementId: "G-JSPW1PPC6S"
+        };
+
+        // --- Initialize Firebase ---
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const playersRef = db.collection('players'); // Reference to our 'players' collection in Firestore
+
+        // --- Game and Player Variables ---
+        const authScreen = document.getElementById('authScreen');
+        const gameContainer = document.getElementById('gameContainer');
+        const loginButton = document.getElementById('loginButton');
+        const playerCar = document.getElementById('playerCar');
+        const gameWidth = gameContainer.offsetWidth;
+        const gameHeight = gameContainer.offsetHeight;
+
+        let player = {
+            id: null,
+            x: (gameWidth - 50) / 2,
+            y: gameHeight - 100,
+        };
+        const otherPlayers = {}; // To keep track of other player elements
+
+        // --- Authentication ---
+        loginButton.onclick = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+        };
+
+        // Listen for changes in authentication state (login/logout)
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in
+                player.id = user.uid; // Use the unique user ID from Firebase Auth
+                authScreen.style.display = 'none';
+                gameContainer.style.display = 'block';
+
+                // Add the player to Firestore
+                playersRef.doc(player.id).set({
+                    x: player.x,
+                    y: player.y
+                });
+
+                // Start game logic
+                startGame();
+            } else {
+                // User is signed out
+                authScreen.style.display = 'block';
+                gameContainer.style.display = 'none';
+            }
+        });
+
+        // --- Game Logic ---
+        function startGame() {
+            // Listen for real-time updates from other players
+            playersRef.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    const docId = change.doc.id;
+                    const playerData = change.doc.data();
+
+                    if (docId === player.id) return; // Don't draw our own car
+
+                    if (change.type === "removed") {
+                        // Player disconnected, remove their car
+                        if (otherPlayers[docId]) {
+                            otherPlayers[docId].remove();
+                            delete otherPlayers[docId];
+                        }
+                    } else {
+                        // A player was added or moved
+                        if (!otherPlayers[docId]) {
+                            // Create a new car element if they are new
+                            const carElement = document.createElement('div');
+                            carElement.className = 'car other-car';
+                            gameContainer.appendChild(carElement);
+                            otherPlayers[docId] = carElement;
+                        }
+                        // Update their car's position
+                        otherPlayers[docId].style.left = playerData.x + 'px';
+                        otherPlayers[docId].style.top = playerData.y + 'px';
+                    }
+                });
+            });
+
+            // Start the movement loop
+            playerCarMovementLoop();
+        }
+
+        // --- Player Movement ---
+        function playerCarMovementLoop() {
+            // This is a simplified movement. You can add your existing physics back in.
+            playerCar.style.left = player.x + 'px';
+            playerCar.style.top = player.y + 'px';
+
+            // Continuously send our position to Firestore
+            playersRef.doc(player.id).set({
+                x: player.x,
